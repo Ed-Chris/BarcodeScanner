@@ -6,7 +6,6 @@ import numpy as np
 
 st.title("📷 Grocery Barcode Scanner Prototype")
 
-# Camera input
 img_file = st.camera_input("Take a picture of the barcode")
 
 if img_file:
@@ -23,36 +22,33 @@ if img_file:
 
             st.write(f"✅ Detected: {barcode_data} ({barcode_type})")
 
-            # Call OpenFoodFacts API
             url = f"https://world.openfoodfacts.org/api/v0/product/{barcode_data}.json"
             res = requests.get(url).json()
 
             if res.get("status") == 1:
-                product = res.get("product", {})
+                product = res["product"]
 
-                # Get product name (fallbacks)
-                name = (
-                    product.get("product_name") or
-                    product.get("product_name_en") or
-                    product.get("product_name_fr") or
-                    "Unknown"
-                )
+                # Basic product info
+                st.success(f"**Product:** {product.get('product_name', 'Unknown')}")
+                st.write(f"**Brand:** {product.get('brands', 'Unknown')}")
+                st.write(f"**Quantity:** {product.get('quantity', 'Unknown')}")
 
-                # Get brand (fallbacks)
-                brand = (
-                    product.get("brands") or
-                    product.get("brands_tags", ["Unknown"])[0]
-                )
+                # Nutrition info
+                nutriments = product.get("nutriments", {})
+                if nutriments:
+                    st.subheader("Nutrition Info (per 100g)")
+                    st.write(f"Calories: {nutriments.get('energy-kcal_100g', 'N/A')} kcal")
+                    st.write(f"Protein: {nutriments.get('proteins_100g', 'N/A')} g")
+                    st.write(f"Fat: {nutriments.get('fat_100g', 'N/A')} g")
+                    st.write(f"Carbs: {nutriments.get('carbohydrates_100g', 'N/A')} g")
 
-                # Get product image
-                image_url = product.get("image_small_url") or product.get("image_url")
+                # Ingredients
+                st.subheader("Ingredients")
+                st.write(product.get("ingredients_text", "No ingredient info"))
 
-                st.success(f"**Product Name:** {name}")
-                st.info(f"**Brand:** {brand}")
+                # Nutriscore
+                if product.get("nutriscore_grade"):
+                    st.info(f"Nutri-Score: {product['nutriscore_grade'].upper()}")
 
-                if image_url:
-                    st.image(image_url, caption=name, use_column_width=True)
-                else:
-                    st.warning("No product image available")
             else:
                 st.warning("Product not found")
