@@ -2,8 +2,15 @@ import streamlit as st
 import cv2
 import numpy as np
 import requests
+import sqlite3
+from datetime import datetime, date
+from config import db_connect
 
-st.title("📷 Grocery Barcode Scanner (Cloud-Friendly)")
+# ----------------- Database Setup -----------------
+conn = db_connect()
+c = conn.cursor()
+
+st.title("📷 Grocery Barcode Scanner (Cloud-Friendly with DB)")
 
 # Camera input
 img_file = st.camera_input("Take a picture of the barcode")
@@ -36,30 +43,39 @@ if img_file:
                 # OpenFoodFacts API
                 url = f"https://world.openfoodfacts.org/api/v0/product/{barcode_data}.json"
                 res = requests.get(url).json()
+                product_name = "Unknown Product"
+
                 if res.get("status") == 1:
                     product = res["product"]
+                    product_name = product.get("product_name", "Unknown Product")
 
-                    st.subheader(product.get("product_name", "Unknown Product"))
+                    st.subheader(product_name)
                     st.write(f"**Brand:** {product.get('brands', 'Unknown')}")
                     st.write(f"**Quantity:** {product.get('quantity', 'Unknown')}")
 
-                    nutriments = product.get("nutriments", {})
-                    if nutriments:
-                        st.subheader("Nutrition Info (per 100g)")
-                        st.write(f"Calories: {nutriments.get('energy-kcal_100g', 'N/A')} kcal")
-                        st.write(f"Protein: {nutriments.get('proteins_100g', 'N/A')} g")
-                        st.write(f"Fat: {nutriments.get('fat_100g', 'N/A')} g")
-                        st.write(f"Carbs: {nutriments.get('carbohydrates_100g', 'N/A')} g")
-
-                    st.subheader("Ingredients")
-                    st.write(product.get("ingredients_text", "No ingredient info"))
-
-                    if product.get("nutriscore_grade"):
-                        st.info(f"Nutri-Score: {product['nutriscore_grade'].upper()}")
-
                 else:
                     st.warning("Product not found in OpenFoodFacts")
+
+                # --- Expiry Date Input ---
+                expiry_date = st.date_input("📅 Enter expiry date", min_value=date.today())
+
+                # --- Save to DB ---
+                if st.button("💾 Save to Database"):
+                    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    c.execute(
+                        "INSERT INTO products (barcode, product_name, expiry_date, created_at) VALUES (?, ?, ?, ?)",
+                        (barcode_data, product_name, str(expiry_date), created_at)
+                    )
+                    conn.commit()
+                    st.success("✅ Product saved to database!")
+
             else:
                 st.warning("No barcode found in image.")
         else:
             st.error("Error contacting ZXing API or barcode could not be detected.")
+
+# ----------------- Show Database -----------------
+if st.checkbox("📑 Show saved records"):
+    c.execute("SELECT * FROM products ORDER BY created_at DESC")
+    rows = c.fetchall()
+    st.table(rows)
