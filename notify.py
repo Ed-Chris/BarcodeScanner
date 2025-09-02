@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 import smtplib
 from email.message import EmailMessage
 from config import db_connect
-from email_secrets import EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENTS
+# from email_secrets import EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENTS
+import os
 
 conn = db_connect()
 c = conn.cursor()
@@ -15,6 +16,10 @@ c.execute("SELECT product_name, expiry_date FROM products")
 rows = c.fetchall()
 
 expiring_soon = [r for r in rows if datetime.strptime(r[1], "%Y-%m-%d").date() <= threshold]
+
+EMAIL_ADDRESS = os.environ['EMAIL_ADDRESS']
+EMAIL_PASSWORD = os.environ['EMAIL_PASSWORD']
+RECIPIENTS = os.environ['RECIPIENTS'].split(',')  # comma-separated list
 
 if expiring_soon:
     msg = EmailMessage()
