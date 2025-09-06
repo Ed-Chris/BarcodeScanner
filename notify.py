@@ -1,32 +1,39 @@
-import sqlite3
 from datetime import datetime, timedelta
 import smtplib
 from email.message import EmailMessage
-from config import db_connect
+from config import db_run_query
 import os
+import pandas as pd
 from dotenv import load_dotenv
 
-conn = db_connect()
-c = conn.cursor()
-
-today = datetime.today().date()
-threshold = today + timedelta(days=3)
-
-c.execute("SELECT product_name, expiry_date FROM products")
-rows = c.fetchall()
-
-expiring_soon = [r for r in rows if datetime.strptime(r[1], "%Y-%m-%d").date() <= threshold]
+# Load env variables
 load_dotenv()
 EMAIL_ADDRESS = os.environ['EMAIL_ADDRESS']
 EMAIL_PASSWORD = os.environ['EMAIL_PASSWORD']
 RECIPIENTS = os.environ['RECIPIENTS'].split(',')  # comma-separated list
 
-if expiring_soon:
+# --- Step 1: Query the database ---
+df = db_run_query("SELECT product_name, expiry_date FROM products")
+
+# --- Step 2: Process data ---
+today = datetime.today().date()
+threshold = today + timedelta(days=3)
+
+# Ensure expiry_date is a date
+df["expiry_date"] = pd.to_datetime(df["expiry_date"]).dt.date
+
+# Filter
+expiring_soon = df[df["expiry_date"] <= threshold]
+
+# --- Step 3: Send email if needed ---
+if not expiring_soon.empty:
     msg = EmailMessage()
     msg['Subject'] = "Products Expiring Soon!"
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = ", ".join(RECIPIENTS)
-    body = "\n".join([f"{r[0]} expires on {r[1]}" for r in expiring_soon])
+
+    body = "\n".join([f"{row.product_name} expires on {row.expiry_date}"
+                      for row in expiring_soon.itertuples()])
     msg.set_content(body)
 
     try:
@@ -34,6 +41,8 @@ if expiring_soon:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
-        print("Email sent successfully!")
+        print("✅ Email sent successfully!")
     except Exception as e:
-        print("Error sending email:", e)
+        print("❌ Error sending email:", e)
+else:
+    print("No products expiring soon.")
