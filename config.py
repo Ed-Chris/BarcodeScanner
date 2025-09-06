@@ -3,19 +3,10 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 
-# Load environment variables from .env
 load_dotenv()
 
-# Fetch variables
-USER = os.getenv("user")
-PASSWORD = os.getenv("password")
-HOST = os.getenv("host")
-PORT = os.getenv("port")
-DBNAME = os.getenv("dbname")
-
-def db_run_query(query,params=None):
+def db_run_query(query, params=None):
     try:
-        # Connection setup
         connection = psycopg2.connect(
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD"),
@@ -23,16 +14,25 @@ def db_run_query(query,params=None):
             port=os.getenv("DB_PORT", 6543),
             dbname=os.getenv("DB_NAME", "postgres")
         )
+        cur = connection.cursor()
         
-        # Run query into DataFrame
-        df = pd.read_sql(query, connection, params=params)
-        
-        return df
-    
+        # Determine query type
+        if query.strip().lower().startswith("select"):
+            # For SELECT, return DataFrame
+            df = pd.read_sql(query, connection, params=params)
+            return df
+        else:
+            # For INSERT/UPDATE/DELETE
+            cur.execute(query, params)
+            connection.commit()  # Important! Save changes
+            return None
+
     except Exception as e:
         print(f"Query failed: {e}")
-        return pd.DataFrame()  # return empty df if error
-    
+        return pd.DataFrame() if query.strip().lower().startswith("select") else None
+
     finally:
+        if 'cur' in locals() and cur:
+            cur.close()
         if 'connection' in locals() and connection:
             connection.close()
