@@ -26,9 +26,13 @@ def send_expiry_email():
         RECIPIENTS_STR = os.environ.get("RECIPIENTS", "")
 
     # Get the secret
-    RECIPIENTS_STR = st.secrets.get("RECIPIENTS") or ""
+    RECIPIENTS_STR = st.secrets.get("RECIPIENTS")
 
-    # Remove any surrounding quotes (single or double)
+    # Ensure it is a string
+    if not isinstance(RECIPIENTS_STR, str):
+        RECIPIENTS_STR = ""
+
+    # Remove any surrounding quotes
     RECIPIENTS_STR = RECIPIENTS_STR.strip('\'"')
 
     # Split and clean
