@@ -84,4 +84,4 @@ if st.checkbox("📑 Show saved records"):
 # --- Streamlit button ---
 if st.button("📧 Send Expiry Email Now"):
     send_expiry_email()
-    st.info("Email sent")
+    st.success("✅ Expiry email triggered!")
