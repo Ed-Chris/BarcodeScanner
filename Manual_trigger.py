@@ -25,8 +25,18 @@ def send_expiry_email():
         EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
         RECIPIENTS_STR = os.environ.get("RECIPIENTS", "")
 
+    # Get the secret
     RECIPIENTS_STR = st.secrets.get("RECIPIENTS") or ""
+
+    # Remove any surrounding quotes (single or double)
+    RECIPIENTS_STR = RECIPIENTS_STR.strip('\'"')
+
+    # Split and clean
     RECIPIENTS = [r.strip() for r in RECIPIENTS_STR.split(",") if r.strip()]
+
+    if not RECIPIENTS:
+        st.error("❌ No recipients set!")
+        return
 
 
     # Check credentials
