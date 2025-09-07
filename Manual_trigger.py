@@ -25,9 +25,8 @@ def send_expiry_email():
         EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
         RECIPIENTS_STR = os.environ.get("RECIPIENTS", "")
 
-    # Ensure string and remove surrounding quotes
-    RECIPIENTS_STR = str(RECIPIENTS_STR).strip('\'"')
-    RECIPIENTS = [r.strip() for r in RECIPIENTS_STR.split(",") if r.strip()]
+    # --- Split recipients safely and remove quotes/spaces ---
+    RECIPIENTS = [r.strip().strip('\'"') for r in RECIPIENTS_STR.split(",") if r.strip()]
 
     if not all([EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENTS]):
         msg = "❌ Email credentials or recipients are missing!"
@@ -56,8 +55,10 @@ def send_expiry_email():
             print(msg)
         return
 
-    # --- Convert expiry_date to datetime.date ---
+    # --- Convert expiry_date to datetime.date safely ---
     df["expiry_date"] = pd.to_datetime(df["expiry_date"], errors="coerce").dt.date
+
+    # --- Filter products expiring within 3 days ---
     threshold = datetime.today().date() + timedelta(days=3)
     expiring_soon = [r for r in df.itertuples(index=False) if r.expiry_date and r.expiry_date <= threshold]
 
@@ -81,7 +82,7 @@ def send_expiry_email():
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg_email)
-        msg = "✅ Expiry email sent successfully!"
+        msg = f"✅ Expiry email sent successfully to {len(RECIPIENTS)} recipients!"
         if USING_STREAMLIT:
             st.success(msg)
         else:
