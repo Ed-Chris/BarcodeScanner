@@ -4,6 +4,7 @@ import numpy as np
 import requests
 from datetime import datetime, date
 from config import db_run_query  # 👈 your DB helper
+from Manual_trigger import send_expiry_email  # 👈 reuse email function
 
 st.title("📷 Grocery Barcode Scanner (Cloud-Friendly with DB)")
 
@@ -79,3 +80,7 @@ if st.checkbox("📑 Show saved records"):
         st.dataframe(df)
     else:
         st.info("No products saved yet.")
+
+# --- Streamlit button ---
+if st.button("📧 Send Expiry Email Now"):
+    send_expiry_email()
