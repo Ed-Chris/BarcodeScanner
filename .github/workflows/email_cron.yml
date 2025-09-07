@@ -3,7 +3,7 @@ name: Expiry Email Cron
 # Run this workflow on a schedule
 on:
   schedule:
-    - cron: '0 0 * * *'  # Every day at midnight UTC
+    - cron: '5 0 * * *'   # UTC = 05:00, corresponds to 00:00 EST (standard time)
   workflow_dispatch:     # Allows manual trigger
 
 jobs:
