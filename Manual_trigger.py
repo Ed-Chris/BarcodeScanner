@@ -7,10 +7,12 @@ from email.message import EmailMessage
 from config import db_run_query  # your DB helper
 from dotenv import load_dotenv
 
-load_dotenv()
-
 # --- Function to send email ---
 def send_expiry_email():
+    load_dotenv()
+    EMAIL_ADDRESS = os.environ['EMAIL_ADDRESS']
+    EMAIL_PASSWORD = os.environ['EMAIL_PASSWORD']
+    RECIPIENTS = os.environ['RECIPIENTS'].split(',')  # comma-separated list
     today = datetime.today().date()
     threshold = today + timedelta(days=3)
     
@@ -27,10 +29,6 @@ def send_expiry_email():
     if not expiring_soon:
         st.info("No products expiring soon.")
         return
-    
-    EMAIL_ADDRESS = os.environ['EMAIL_ADDRESS']
-    EMAIL_PASSWORD = os.environ['EMAIL_PASSWORD']
-    RECIPIENTS = os.environ['RECIPIENTS'].split(',')
 
     msg = EmailMessage()
     msg['Subject'] = "Products Expiring Soon!"
