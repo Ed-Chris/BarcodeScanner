@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import os
+import pandas as pd
 import smtplib
 from email.message import EmailMessage
 from config import db_run_query  # your DB helper
@@ -12,11 +13,12 @@ def send_expiry_email():
     
     df = db_run_query("SELECT product_name, expiry_date FROM products;")
     
-    if df.empty:
-        st.info("No products in database to check.")
-        return
-    
-    # Filter expiring products
+    # --- Convert text expiry_date to datetime.date ---
+    if not df.empty and "expiry_date" in df.columns:
+        df["expiry_date"] = pd.to_datetime(df["expiry_date"]).dt.date
+
+    threshold = datetime.today().date() + timedelta(days=3)
+
     expiring_soon = [r for r in df.itertuples(index=False) if r.expiry_date <= threshold]
     
     if not expiring_soon:
