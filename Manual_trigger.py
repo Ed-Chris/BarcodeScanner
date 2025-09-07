@@ -19,18 +19,22 @@ def send_expiry_email():
     if USING_STREAMLIT:
         EMAIL_ADDRESS = st.secrets.get("EMAIL_ADDRESS")
         EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD")
-        RECIPIENTS_STR = st.secrets.get("RECIPIENTS", "")
+        recipients_secret = st.secrets.get("RECIPIENTS", "")
     else:
+        import os
         EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
         EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
-        RECIPIENTS_STR = os.environ.get("RECIPIENTS", "")
+        recipients_secret = os.environ.get("RECIPIENTS", "")
 
-    # Get the secret string (from Streamlit or .env)
-    RECIPIENTS_STR = st.secrets.get("RECIPIENTS", "")
-
-    # Split by comma, strip spaces, then strip both single and double quotes from each email
-    RECIPIENTS = [r.strip().strip('\'"') for r in RECIPIENTS_STR.split(",") if r.strip()]
-
+    # --- Convert recipients to list safely ---
+    if isinstance(recipients_secret, str):
+        # Split by comma and strip quotes/spaces
+        RECIPIENTS = [r.strip().strip('\'"') for r in recipients_secret.split(",") if r.strip()]
+    elif isinstance(recipients_secret, list):
+        # Strip quotes/spaces from each item
+        RECIPIENTS = [r.strip().strip('\'"') for r in recipients_secret if r.strip()]
+    else:
+        RECIPIENTS = []
 
     if not all([EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENTS]):
         msg = "❌ Email credentials or recipients are missing!"
@@ -86,7 +90,7 @@ def send_expiry_email():
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg_email)
-        msg = f"✅ Expiry email sent successfully to {len(RECIPIENTS)} recipients!"
+        msg = f"✅ Expiry email sent successfully to {len(RECIPIENTS)} recipient(s)!"
         if USING_STREAMLIT:
             st.success(msg)
         else:
