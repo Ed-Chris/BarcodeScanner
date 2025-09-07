@@ -1,14 +1,13 @@
-import streamlit as st
-from datetime import datetime, timedelta
-import os
-import pandas as pd
-import smtplib
-from email.message import EmailMessage
-from config import db_run_query  # your DB helper
-from dotenv import load_dotenv
-
 # --- Function to send email ---
 def send_expiry_email():
+    import streamlit as st
+    from datetime import datetime, timedelta
+    import os
+    import pandas as pd
+    import smtplib
+    from email.message import EmailMessage
+    from config import db_run_query  # your DB helper
+    from dotenv import load_dotenv
     load_dotenv()
     EMAIL_ADDRESS = os.environ['EMAIL_ADDRESS']
     EMAIL_PASSWORD = os.environ['EMAIL_PASSWORD']

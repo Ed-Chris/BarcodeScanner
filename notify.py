@@ -12,10 +12,10 @@ EMAIL_ADDRESS = os.environ['EMAIL_ADDRESS']
 EMAIL_PASSWORD = os.environ['EMAIL_PASSWORD']
 RECIPIENTS = os.environ['RECIPIENTS'].split(',')  # comma-separated list
 
-# --- Step 1: Query the database ---
+# Query the database ---
 df = db_run_query("SELECT product_name, expiry_date FROM products")
 
-# --- Step 2: Process data ---
+# Process data ---
 today = datetime.today().date()
 threshold = today + timedelta(days=3)
 
@@ -25,7 +25,7 @@ df["expiry_date"] = pd.to_datetime(df["expiry_date"]).dt.date
 # Filter
 expiring_soon = df[df["expiry_date"] <= threshold]
 
-# --- Step 3: Send email if needed ---
+# Send email if needed ---
 if not expiring_soon.empty:
     msg = EmailMessage()
     msg['Subject'] = "Products Expiring Soon!"
