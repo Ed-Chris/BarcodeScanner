@@ -6,6 +6,7 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 import io
+from zoneinfo import ZoneInfo  # built-in since Python 3.9
 
 # Load env variables
 load_dotenv()
@@ -17,6 +18,8 @@ RECIPIENTS = os.environ['RECIPIENTS'].split(',')  # comma-separated list
 df = db_run_query("SELECT product_name, expiry_date FROM products;")
 
 # Process data
+# Get "today" in EST (handles EDT in summer automatically)
+today = datetime.now(ZoneInfo("America/New_York")).date()
 today = datetime.today().date()
 tomorrow = today + timedelta(days=1)
 threshold = today + timedelta(days=3)
